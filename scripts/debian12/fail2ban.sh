@@ -19,7 +19,10 @@ install() {
     log_step "配置 fail2ban 白名单"
     JAIL_CONF="/etc/fail2ban/jail.conf"
     if [[ -f "$JAIL_CONF" ]]; then
-        # 替换 ignoreip 配置
+        # 备份并替换 ignoreip 配置
+        if [[ ! -f "${JAIL_CONF}.bak" ]]; then
+            cp "$JAIL_CONF" "${JAIL_CONF}.bak"
+        fi
         sed -i "s/#ignoreip = 127.0.0.1\/8 ::1/ignoreip = ${FAIL2BAN_WHITELIST}/" "$JAIL_CONF"
     fi
     

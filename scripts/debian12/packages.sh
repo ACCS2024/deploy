@@ -53,12 +53,14 @@ install() {
         openssl
     
     log_step "安装 .NET 运行时"
-    wget -q https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb \
-        -O /tmp/packages-microsoft-prod.deb
-    dpkg -i /tmp/packages-microsoft-prod.deb || true
-    apt-get update -y
+    if [[ ! -f /etc/apt/sources.list.d/microsoft-prod.list ]]; then
+        wget -q https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb \
+            -O /tmp/packages-microsoft-prod.deb
+        dpkg -i /tmp/packages-microsoft-prod.deb || true
+        rm -f /tmp/packages-microsoft-prod.deb
+        apt-get update -y
+    fi
     apt_install aspnetcore-runtime-8.0 aspnetcore-runtime-7.0 || true
-    rm -f /tmp/packages-microsoft-prod.deb
     
     log_step "安装中文字体"
     apt_install \

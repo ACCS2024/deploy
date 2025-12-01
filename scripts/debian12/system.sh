@@ -14,8 +14,10 @@ source "${SCRIPT_DIR}/../../config/versions.conf"
 #===============================================================================
 install() {
     log_step "配置 DNS"
-    echo "nameserver 8.8.8.8" > /etc/resolv.conf
-    echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+    if ! grep -q "8.8.8.8" /etc/resolv.conf 2>/dev/null; then
+        echo "nameserver 8.8.8.8" > /etc/resolv.conf
+        echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+    fi
     
     log_step "设置时区"
     timedatectl set-timezone Asia/Shanghai
@@ -26,7 +28,9 @@ install() {
     mkdir -p "${WWWLOG_DIR}"
     
     log_step "备份并配置 apt 源"
-    cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null || true
+    if [[ ! -f /etc/apt/sources.list.bak ]]; then
+        cp /etc/apt/sources.list /etc/apt/sources.list.bak
+    fi
     
     cat > /etc/apt/sources.list << 'EOF'
 deb http://deb.debian.org/debian/ bookworm main contrib

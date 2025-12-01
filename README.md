@@ -58,9 +58,39 @@ deploy/
 ├── install.sh           # 入口脚本
 ├── lib/common.sh        # 公共函数
 ├── config/              # 配置文件
+│   └── versions.conf    # 版本和路径配置
+├── conf/                # OpenResty 配置模板
+│   ├── nginx.conf       # 主配置
+│   ├── vhost/           # 虚拟主机
+│   ├── rewrite/         # 重写规则
+│   └── ssl/             # SSL 证书
 ├── scripts/
 │   └── debian12/        # Debian 12 组件脚本
 └── doc/                 # 文档
+```
+
+## 配置管理
+
+### OpenResty 配置
+
+安装 OpenResty 时会自动：
+1. 备份现有配置到 `/usr/local/openresty/nginx/backup/conf-时间戳-随机ID/`
+2. 从 `conf/` 目录部署新配置
+3. 自动过滤无用文件（.default, .bak 等）
+
+### 自定义配置
+
+编辑 `conf/` 目录下的配置文件，然后重新执行：
+```bash
+./install.sh --openresty
+```
+
+### 配置回滚
+
+如需回滚，从备份目录手动恢复：
+```bash
+rsync -a /usr/local/openresty/nginx/backup/conf-xxx/ /usr/local/openresty/nginx/conf/
+systemctl reload openresty
 ```
 
 ## 扩展其他系统

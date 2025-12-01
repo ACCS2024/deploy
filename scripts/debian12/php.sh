@@ -23,18 +23,18 @@ install() {
     log_step "配置 php.ini"
     PHP_INI="/etc/php/${PHP_VERSION}/fpm/php.ini"
     if [[ -f "$PHP_INI" ]]; then
-        sed -i "s/^upload_max_filesize = .*/upload_max_filesize = ${PHP_UPLOAD_MAX}/" "$PHP_INI"
-        sed -i "s/^post_max_size = .*/post_max_size = ${PHP_POST_MAX}/" "$PHP_INI"
+        sed -i.bak "s/^upload_max_filesize = .*/upload_max_filesize = ${PHP_UPLOAD_MAX}/" "$PHP_INI"
+        sed -i.bak "s/^post_max_size = .*/post_max_size = ${PHP_POST_MAX}/" "$PHP_INI"
     fi
     
     log_step "配置 PHP-FPM pool"
     POOL_CONF="/etc/php/${PHP_VERSION}/fpm/pool.d/www.conf"
     if [[ -f "$POOL_CONF" ]]; then
-        sed -i "s/pm.max_children = [0-9]*/pm.max_children = ${PHP_PM_MAX_CHILDREN}/" "$POOL_CONF"
-        sed -i "s/pm.start_servers = [0-9]*/pm.start_servers = ${PHP_PM_START_SERVERS}/" "$POOL_CONF"
-        sed -i "s/pm.min_spare_servers = [0-9]*/pm.min_spare_servers = ${PHP_PM_MIN_SPARE}/" "$POOL_CONF"
-        sed -i "s/pm.max_spare_servers = [0-9]*/pm.max_spare_servers = ${PHP_PM_MAX_SPARE}/" "$POOL_CONF"
-        sed -i "s/pm.max_requests = [0-9]*/pm.max_requests = ${PHP_PM_MAX_REQUESTS}/" "$POOL_CONF"
+        sed -i.bak "s/pm.max_children = [0-9]*/pm.max_children = ${PHP_PM_MAX_CHILDREN}/" "$POOL_CONF"
+        sed -i.bak "s/pm.start_servers = [0-9]*/pm.start_servers = ${PHP_PM_START_SERVERS}/" "$POOL_CONF"
+        sed -i.bak "s/pm.min_spare_servers = [0-9]*/pm.min_spare_servers = ${PHP_PM_MIN_SPARE}/" "$POOL_CONF"
+        sed -i.bak "s/pm.max_spare_servers = [0-9]*/pm.max_spare_servers = ${PHP_PM_MAX_SPARE}/" "$POOL_CONF"
+        sed -i.bak "s/pm.max_requests = [0-9]*/pm.max_requests = ${PHP_PM_MAX_REQUESTS}/" "$POOL_CONF"
     fi
     
     log_step "启动 PHP-FPM"

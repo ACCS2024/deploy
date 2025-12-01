@@ -18,8 +18,12 @@ install() {
         log_info "BBR 已启用，跳过"
     else
         log_step "启用 BBR"
-        echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-        echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+        if ! grep -q "^net.core.default_qdisc=fq" /etc/sysctl.conf 2>/dev/null; then
+            echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+        fi
+        if ! grep -q "^net.ipv4.tcp_congestion_control=bbr" /etc/sysctl.conf 2>/dev/null; then
+            echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+        fi
     fi
     
     log_step "配置 sysctl 内核参数"
