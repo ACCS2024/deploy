@@ -23,19 +23,32 @@ chmod +x install.sh
 ./install.sh --all --mode fast
 ```
 
-## 可用组件
+## PHP-FPM 性能优化
 
-| 组件 | 参数 | 说明 |
-|------|------|------|
-| system | `--system` | 时区、DNS、目录、apt源 |
-| network | `--network` | BBR、sysctl 内核优化 |
-| packages | `--packages` | 基础软件包、编译依赖 |
-| php | `--php` | PHP-FPM |
-| openresty | `--openresty` | OpenResty/Nginx |
-| mysql | `--mysql` | MySQL 8.0 |
-| redis | `--redis` | Redis |
-| fail2ban | `--fail2ban` | Fail2ban |
-| firewall | `--firewall` | iptables 规则 |
+当前配置针对 **Intel Xeon E5-2680 v4 (14核) + 128GB内存** 进行了优化：
+
+### 关键参数
+- **pm.max_children**: 112 (基于内存和CPU核心数计算)
+- **pm.start_servers**: 28
+- **pm.min_spare_servers**: 14
+- **pm.max_spare_servers**: 56
+- **memory_limit**: 256MB (每个进程)
+- **upload_max_filesize**: 100MB
+
+### 性能监控
+```bash
+# 运行自检脚本
+./selfcheck.sh
+
+# 查看 PHP-FPM 状态
+systemctl status php8.2-fpm
+
+# 监控进程和内存
+ps aux --no-headers -o "rss,cmd" -C php-fpm | awk '{ sum+=$1 } END { printf ("平均内存: %.1fMB\n", sum/NR/1024) }'
+```
+
+### 详细配置说明
+请查看 `doc/开发/PHP-FPM优化配置.md`
 
 ## 部署模式
 

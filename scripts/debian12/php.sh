@@ -23,18 +23,84 @@ install() {
     log_step "配置 php.ini"
     PHP_INI="/etc/php/${PHP_VERSION}/fpm/php.ini"
     if [[ -f "$PHP_INI" ]]; then
-        sed -i.bak "s/^upload_max_filesize = .*/upload_max_filesize = ${PHP_UPLOAD_MAX}/" "$PHP_INI"
-        sed -i.bak "s/^post_max_size = .*/post_max_size = ${PHP_POST_MAX}/" "$PHP_INI"
+        # 备份原始配置（只备份一次）
+        if [[ ! -f "${PHP_INI}.orig" ]]; then
+            cp "$PHP_INI" "${PHP_INI}.orig"
+            log_info "已备份原始 php.ini 配置"
+        fi
+        
+        # 文件上传大小
+        if ! grep -q "^upload_max_filesize = ${PHP_UPLOAD_MAX}" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^upload_max_filesize = .*/upload_max_filesize = ${PHP_UPLOAD_MAX}/" "$PHP_INI"
+        fi
+        if ! grep -q "^post_max_size = ${PHP_POST_MAX}" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^post_max_size = .*/post_max_size = ${PHP_POST_MAX}/" "$PHP_INI"
+        fi
+        
+        # 内存限制 (每个进程)
+        if ! grep -q "^memory_limit = 256M" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^memory_limit = .*/memory_limit = 256M/" "$PHP_INI"
+        fi
+        
+        # 执行时间限制
+        if ! grep -q "^max_execution_time = 300" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^max_execution_time = .*/max_execution_time = 300/" "$PHP_INI"
+        fi
+        if ! grep -q "^max_input_time = 300" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^max_input_time = .*/max_input_time = 300/" "$PHP_INI"
+        fi
+        
+        # 性能优化
+        if ! grep -q "^realpath_cache_size = 4M" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^realpath_cache_size = .*/realpath_cache_size = 4M/" "$PHP_INI"
+        fi
+        if ! grep -q "^realpath_cache_ttl = 120" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^realpath_cache_ttl = .*/realpath_cache_ttl = 120/" "$PHP_INI"
+        fi
+        
+        # OPcache 优化 (如果启用)
+        if ! grep -q "^opcache.enable=1" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^;opcache.enable=.*/opcache.enable=1/" "$PHP_INI"
+        fi
+        if ! grep -q "^opcache.memory_consumption=256" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^;opcache.memory_consumption=.*/opcache.memory_consumption=256/" "$PHP_INI"
+        fi
+        if ! grep -q "^opcache.max_accelerated_files=7963" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^;opcache.max_accelerated_files=.*/opcache.max_accelerated_files=7963/" "$PHP_INI"
+        fi
+        if ! grep -q "^opcache.revalidate_freq=0" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^;opcache.revalidate_freq=.*/opcache.revalidate_freq=0/" "$PHP_INI"
+        fi
+        if ! grep -q "^opcache.fast_shutdown=1" "$PHP_INI" 2>/dev/null; then
+            sed -i "s/^;opcache.fast_shutdown=.*/opcache.fast_shutdown=1/" "$PHP_INI"
+        fi
     fi
     
     log_step "配置 PHP-FPM pool"
     POOL_CONF="/etc/php/${PHP_VERSION}/fpm/pool.d/www.conf"
     if [[ -f "$POOL_CONF" ]]; then
+        # 进程管理
         sed -i.bak "s/pm.max_children = [0-9]*/pm.max_children = ${PHP_PM_MAX_CHILDREN}/" "$POOL_CONF"
         sed -i.bak "s/pm.start_servers = [0-9]*/pm.start_servers = ${PHP_PM_START_SERVERS}/" "$POOL_CONF"
         sed -i.bak "s/pm.min_spare_servers = [0-9]*/pm.min_spare_servers = ${PHP_PM_MIN_SPARE}/" "$POOL_CONF"
         sed -i.bak "s/pm.max_spare_servers = [0-9]*/pm.max_spare_servers = ${PHP_PM_MAX_SPARE}/" "$POOL_CONF"
         sed -i.bak "s/pm.max_requests = [0-9]*/pm.max_requests = ${PHP_PM_MAX_REQUESTS}/" "$POOL_CONF"
+        
+        # 性能优化
+        sed -i.bak "s/pm.process_idle_timeout = .*/pm.process_idle_timeout = 10s/" "$POOL_CONF"
+        sed -i.bak "s/;pm.max_requests = .*/pm.max_requests = ${PHP_PM_MAX_REQUESTS}/" "$POOL_CONF"
+        
+        # 监听配置
+        sed -i.bak "s/listen.backlog = .*/listen.backlog = 65536/" "$POOL_CONF"
+        sed -i.bak "s/;listen.owner = .*/listen.owner = www-data/" "$POOL_CONF"
+        sed -i.bak "s/;listen.group = .*/listen.group = www-data/" "$POOL_CONF"
+        sed -i.bak "s/;listen.mode = .*/listen.mode = 0660/" "$POOL_CONF"
+        
+        # 环境变量
+        sed -i.bak "s/;env\[HOSTNAME\] = .*/env[HOSTNAME] = \$HOSTNAME/" "$POOL_CONF"
+        sed -i.bak "s/;env\[TMP\] = .*/env[TMP] = /tmp/" "$POOL_CONF"
+        sed -i.bak "s/;env\[TMPDIR\] = .*/env[TMPDIR] = /tmp/" "$POOL_CONF"
+        sed -i.bak "s/;env\[TEMP\] = .*/env[TEMP] = /tmp/" "$POOL_CONF"
     fi
     
     log_step "启动 PHP-FPM"

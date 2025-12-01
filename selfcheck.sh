@@ -47,12 +47,39 @@ check_command() {
     fi
 }
 
-echo "=== 服务状态 ==="
-check_service "php-fpm" || check_service "php8.2-fpm" || check_service "php8.1-fpm"
-check_service "mysql"
-check_service "redis-server"
-check_service "openresty"
-check_service "fail2ban"
+echo "=== PHP-FPM 状态 ==="
+php_version=$(php -v 2>/dev/null | head -1 | cut -d " " -f 2 | cut -d "." -f 1,2)
+if [[ -n "$php_version" ]]; then
+    echo -e "${GREEN}✓${NC} PHP 版本: $php_version"
+    
+    # 检查 PHP-FPM 服务
+    if systemctl is-active --quiet "php${php_version}-fpm"; then
+        echo -e "${GREEN}✓${NC} PHP-FPM 服务运行中"
+        
+        # 检查进程数量
+        php_processes=$(ps aux | grep "php-fpm" | grep -v grep | wc -l)
+        echo "    PHP-FPM 进程数: $php_processes"
+        
+        # 检查内存使用
+        php_memory=$(ps aux --no-headers -o "rss,cmd" -C php-fpm 2>/dev/null | awk '{ sum+=$1 } END { if (NR > 0) printf "%.1f", sum/NR/1024; else print "0" }')
+        if [[ -n "$php_memory" && "$php_memory" != "0" ]]; then
+            echo "    平均内存使用: ${php_memory}MB"
+        fi
+        
+        # 检查配置
+        pool_conf="/etc/php/${php_version}/fpm/pool.d/www.conf"
+        if [[ -f "$pool_conf" ]]; then
+            max_children=$(grep "^pm.max_children" "$pool_conf" | cut -d "=" -f 2 | tr -d " ")
+            echo "    配置进程数: $max_children"
+        fi
+    else
+        echo -e "${RED}✗${NC} PHP-FPM 服务未运行"
+        check_ok=1
+    fi
+else
+    echo -e "${RED}✗${NC} PHP 未安装"
+    check_ok=1
+fi
 echo ""
 
 echo "=== 端口监听 ==="
