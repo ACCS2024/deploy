@@ -24,6 +24,7 @@
 3. **网络**: 服务器需要能够访问互联网
 4. **域名**: 已解析到服务器IP的域名
 5. **SSL证书**: 准备好域名的 SSL 证书和私钥
+6. **Nginx**: 推荐先通过主脚本安装 OpenResty（`./install.sh --openresty`），如未安装会自动使用官方源安装
 
 ## 安装步骤
 
@@ -31,24 +32,33 @@
 
 ```bash
 cd /root
-git clone <your-repo-url> deploy
+git clone https://github.com/ACCS2024/deploy.git deploy
 cd deploy
 ```
 
-### 2. 准备 SSL 证书
+### 2. 推荐先安装 OpenResty (可选)
+
+```bash
+# 通过主脚本安装 OpenResty（编译安装，功能更完整）
+./install.sh --openresty
+
+# 如果跳过这步，Trojan-Go 脚本会自动使用官方源快速安装 OpenResty
+```
+
+### 3. 准备 SSL 证书
 
 在运行脚本前，请准备好以下内容：
 - SSL 证书文件内容（.crt 或 .pem）
 - SSL 私钥文件内容（.key）
 
-### 3. 运行安装脚本
+### 4. 运行安装脚本
 
 ```bash
 chmod +x scripts/debian12/trojan-go.sh
 bash scripts/debian12/trojan-go.sh install
 ```
 
-### 4. 按照提示输入配置信息
+### 5. 按照提示输入配置信息
 
 脚本会要求你输入：
 
@@ -60,12 +70,12 @@ bash scripts/debian12/trojan-go.sh install
 - Trojan-Go 密码（32位随机字符串）
 - WebSocket 路径（/ws + 8位随机字符串）
 
-### 5. 等待安装完成
+### 6. 等待安装完成
 
 脚本会自动完成以下操作：
 - 更新系统包
 - 安装必要工具（curl, wget, unzip等）
-- 编译安装 OpenResty (Nginx)
+- 检查并安装 OpenResty (如未安装，使用官方源快速安装)
 - 下载安装 Trojan-Go
 - 配置服务文件
 - 部署 SSL 证书

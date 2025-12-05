@@ -35,7 +35,7 @@ init_environment() {
     apt-get update -y
     
     log_info "安装必要的系统工具"
-    apt_install curl wget unzip zip tar gzip openssl ca-certificates gnupg2 jq
+    apt_install curl wget unzip tar gzip openssl ca-certificates gnupg2 lsb-release jq
     
     log_info "创建必要的目录"
     mkdir -p "${TROJAN_INSTALL_DIR}"
@@ -52,39 +52,31 @@ init_environment() {
 install_nginx() {
     log_step "检查并安装 Nginx (OpenResty)"
     
-    if command -v openresty >/dev/null 2>&1; then
-        log_info "OpenResty 已安装，跳过安装步骤"
+    # 检查是否已安装
+    if command -v openresty >/dev/null 2>&1 || command -v nginx >/dev/null 2>&1; then
+        log_info "Nginx/OpenResty 已安装，跳过安装步骤"
         return 0
     fi
     
-    log_info "安装 OpenResty 依赖"
-    apt_install build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev \
-        libssl-dev libgd-dev libgeoip-dev libxml2-dev libxslt1-dev \
-        libperl-dev git
+    log_info "使用官方源快速安装 OpenResty"
     
-    log_info "下载 OpenResty"
-    cd /tmp
-    OPENRESTY_VERSION="${OPENRESTY_VERSION:-1.21.4.3}"
-    wget -q "https://openresty.org/download/openresty-${OPENRESTY_VERSION}.tar.gz"
-    tar -zxf "openresty-${OPENRESTY_VERSION}.tar.gz"
-    cd "openresty-${OPENRESTY_VERSION}"
+    # 安装依赖
+    apt_install wget gnupg ca-certificates lsb-release
     
-    log_info "编译安装 OpenResty"
-    ./configure -j$(nproc) \
-        --prefix=/usr/local/openresty \
-        --with-http_v2_module \
-        --with-http_ssl_module \
-        --with-http_realip_module \
-        --with-http_gzip_static_module \
-        --with-stream \
-        --with-stream_ssl_module
+    # 导入 GPG 密钥
+    wget -qO - https://openresty.org/package/pubkey.gpg | apt-key add -
     
-    make -j$(nproc)
-    make install
+    # 添加官方源
+    echo "deb http://openresty.org/package/debian $(lsb_release -sc) openresty" \
+        > /etc/apt/sources.list.d/openresty.list
+    
+    # 更新并安装
+    apt-get update -y
+    apt_install openresty
     
     # 创建软链接
-    ln -sf /usr/local/openresty/nginx/sbin/nginx /usr/bin/nginx
-    ln -sf /usr/local/openresty/bin/openresty /usr/bin/openresty
+    ln -sf /usr/local/openresty/nginx/sbin/nginx /usr/bin/nginx 2>/dev/null || true
+    ln -sf /usr/local/openresty/bin/openresty /usr/bin/openresty 2>/dev/null || true
     
     # 创建 Nginx systemd 服务
     create_nginx_service
@@ -496,7 +488,7 @@ install() {
     # 环境初始化
     init_environment
     
-    # 安装 Nginx
+    # 检查并安装 Nginx（如果未安装，使用官方快速安装）
     install_nginx
     
     # 安装 Trojan-Go

@@ -67,6 +67,9 @@ ps aux --no-headers -o "rss,cmd" -C php-fpm | awk '{ sum+=$1 } END { printf ("�
 ### 快速部署
 
 ```bash
+# 推荐：先安装 OpenResty（可选，如果未安装会自动使用官方源安装）
+./install.sh --openresty
+
 # 方式 1: 通过主安装脚本
 ./install.sh --trojan-go
 
