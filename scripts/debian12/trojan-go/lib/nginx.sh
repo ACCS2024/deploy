@@ -39,7 +39,7 @@ install_nginx() {
     create_nginx_service
     
     # 创建 vhost 目录
-    mkdir -p /etc/openresty/vhost
+    mkdir -p /usr/local/openresty/nginx/conf/vhost
     
     # 配置 nginx.conf 引入 vhost
     configure_nginx_vhost_include
@@ -95,7 +95,7 @@ configure_nginx_vhost_include() {
     fi
     
     # 检查是否已经配置了 vhost 引入
-    if grep -q "include /etc/openresty/vhost/\*.conf;" "$nginx_conf"; then
+    if grep -q "include /usr/local/openresty/nginx/conf/vhost/\*.conf;" "$nginx_conf"; then
         log_info "Nginx 已配置 vhost 引入"
         return 0
     fi
@@ -109,7 +109,7 @@ configure_nginx_vhost_include() {
     # 在 http 块的末尾添加 include 指令
     # 使用更安全的方式：在最后一个 } 前插入
     if sed -i '/^http {/,/^}/ {
-        /^}/i\    # 引入虚拟主机配置\n    include /etc/openresty/vhost/*.conf;
+        /^}/i\    # 引入虚拟主机配置\n    include /usr/local/openresty/nginx/conf/vhost/*.conf;
     }' "$nginx_conf"; then
         log_info "✓ Nginx vhost 引入配置完成"
     else

@@ -33,8 +33,8 @@ scripts/debian12/
 - **复用性**: 任何需要 SSL 的组件都可以引用此模块
 
 ### Nginx vhost 目录
-- **位置**: `/etc/openresty/vhost/`
-- **配置**: nginx.conf 自动引入 `include /etc/openresty/vhost/*.conf;`
+- **位置**: `/usr/local/openresty/nginx/conf/vhost/`
+- **配置**: nginx.conf 自动引入 `include /usr/local/openresty/nginx/conf/vhost/*.conf;`
 - **优势**: 方便后续添加多个虚拟主机，无需修改主配置文件
 
 ## 🚀 核心功能
@@ -61,7 +61,7 @@ scripts/debian12/
 ### 3. Nginx 模块 (nginx.sh)
 - ✅ 安装 OpenResty
 - ✅ 创建 systemd 服务
-- ✅ 自动创建 `/etc/openresty/vhost/` 目录
+- ✅ 自动创建 `/usr/local/openresty/nginx/conf/vhost/` 目录
 - ✅ 配置 nginx.conf 引入 vhost 目录
 - ✅ 配置修改前自动备份
 - ✅ 配置测试验证

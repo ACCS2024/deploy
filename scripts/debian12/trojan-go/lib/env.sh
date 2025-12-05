@@ -8,7 +8,7 @@ export TROJAN_VERSION="v0.10.6"
 export TROJAN_INSTALL_DIR="/usr/local/trojan-go"
 export TROJAN_CONFIG_FILE="${TROJAN_INSTALL_DIR}/config.json"
 export TROJAN_LOG_DIR="/var/log/trojan-go"
-export NGINX_VHOST_DIR="/etc/openresty/vhost"
+export NGINX_VHOST_DIR="/usr/local/openresty/nginx/conf/vhost"
 export SSL_DIR="/etc/letsencrypt/live"
 export WEBROOT="/var/www"
 
