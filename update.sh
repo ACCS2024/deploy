@@ -18,37 +18,16 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 #===============================================================================
-# 备份重要配置
+# 备份脚本配置（只备份可能被覆盖的 conf/ 目录）
 #===============================================================================
 backup_configs() {
-    log_info "备份重要配置..."
-    
-    # 创建备份目录
-    BACKUP_DIR="./backup-$(date +%Y%m%d-%H%M%S)"
-    mkdir -p "$BACKUP_DIR"
-    
-    # 备份 Trojan-Go 配置
-    if [[ -f /usr/local/trojan-go/install_info.txt ]]; then
-        cp /usr/local/trojan-go/install_info.txt "$BACKUP_DIR/" 2>/dev/null || true
-        log_info "✓ Trojan-Go 配置已备份"
-    fi
-    
-    # 备份 MySQL 密码
-    if [[ -f /home/video/uboy.cbo ]]; then
-        cp /home/video/uboy.cbo "$BACKUP_DIR/" 2>/dev/null || true
-        log_info "✓ MySQL 密码已备份"
-    fi
-    
-    # 备份自定义配置文件
+    # 只备份 conf/ 目录，因为其他配置文件都在系统目录不会被覆盖
     if [[ -d conf/ ]]; then
-        cp -r conf/ "$BACKUP_DIR/" 2>/dev/null || true
-        log_info "✓ 配置文件已备份"
-    fi
-    
-    if [[ -d "$BACKUP_DIR" ]] && [[ "$(ls -A "$BACKUP_DIR")" ]]; then
-        log_info "备份文件保存在: $BACKUP_DIR"
-    else
-        rmdir "$BACKUP_DIR" 2>/dev/null || true
+        BACKUP_DIR="./backup-conf-$(date +%Y%m%d-%H%M%S)"
+        cp -r conf/ "$BACKUP_DIR" 2>/dev/null || true
+        if [[ -d "$BACKUP_DIR" ]]; then
+            log_info "✓ conf/ 配置已备份到: $BACKUP_DIR"
+        fi
     fi
 }
 
@@ -131,7 +110,7 @@ main() {
         exit 1
     fi
     
-    # 备份配置
+    # 备份可能被覆盖的配置文件
     backup_configs
     
     # 更新代码
@@ -144,6 +123,7 @@ main() {
     show_update_info
     
     log_info "更新完成！"
+    log_info "注意: Trojan-Go 和 MySQL 等配置文件在系统目录，不会被更新覆盖"
 }
 
 #===============================================================================
@@ -154,11 +134,14 @@ case "${1:-}" in
         echo "用法: $0"
         echo ""
         echo "一键更新部署脚本，包括："
-        echo "  - 备份重要配置"
+        echo "  - 备份 conf/ 配置目录（如有修改）"
         echo "  - 拉取最新代码"
         echo "  - 设置执行权限"
         echo ""
-        echo "如果有本地修改，会询问是否强制更新"
+        echo "注意："
+        echo "  - Trojan-Go 配置在 /usr/local/trojan-go/ 不会被覆盖"
+        echo "  - MySQL 密码在 /home/video/uboy.cbo 不会被覆盖"
+        echo "  - 如果有本地修改，会询问是否强制更新"
         exit 0
         ;;
     *)

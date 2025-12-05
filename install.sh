@@ -201,13 +201,17 @@ run_component() {
     fi
     
     log_info ">>> 开始安装组件: ${component}"
+    echo "[详细日志保存至: ${component_log}]"
+    echo ""
     
-    # 执行组件脚本，传递模式参数
-    if bash "$script" --mode "$MODE" >> "$component_log" 2>&1; then
+    # 执行组件脚本，同时显示日志和保存到文件
+    if bash "$script" --mode "$MODE" 2>&1 | tee "$component_log"; then
+        echo ""
         log_info "✓ 组件 ${component} 安装成功"
         SUCCESS_COMPONENTS+=("$component")
         return 0
     else
+        echo ""
         log_error "✗ 组件 ${component} 安装失败，详见: ${component_log}"
         FAILED_COMPONENTS+=("$component")
         return 1

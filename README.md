@@ -54,6 +54,11 @@ cd /root/deploy
 ./update.sh
 ```
 
+> **说明**: 
+> - 只备份 `conf/` 目录（可能被覆盖的配置文件）
+> - Trojan-Go 和 MySQL 等配置文件在系统目录，不会被更新影响
+> - 自动检测本地修改并询问是否强制更新
+
 ### 手动更新
 ```bash
 cd /root/deploy
@@ -79,11 +84,12 @@ chmod +x scripts/debian12/*.sh
 ```bash
 cd /root/deploy
 
-# 备份 Trojan-Go 配置（如果已安装）
-cp /usr/local/trojan-go/install_info.txt ./trojan-go-backup.txt 2>/dev/null || true
+# update.sh 会自动备份 conf/ 目录（如果有修改）
+# Trojan-Go 配置在 /usr/local/trojan-go/ 不受影响
+# MySQL 密码在 /home/video/uboy.cbo 不受影响
 
-# 备份 MySQL 密码
-cp /home/video/uboy.cbo ./mysql-password-backup.txt 2>/dev/null || true
+# 如需手动备份
+cp -r conf/ conf-backup-$(date +%Y%m%d) 2>/dev/null || true
 
 # 然后更新
 git pull origin master
