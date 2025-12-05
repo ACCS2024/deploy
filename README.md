@@ -157,13 +157,18 @@ ps aux --no-headers -o "rss,cmd" -C php-fpm | awk '{ sum+=$1 } END { printf ("�
 
 ## Trojan-Go 代理部署
 
+### ✨ 全新特性
+
+- 🚀 **全自动部署**: 一键安装，无需手动配置
+- 🔒 **自动 SSL 证书**: 使用 Let's Encrypt 自动申请和续期
+- 📦 **模块化设计**: 清晰的目录结构，易于维护
+- ⏰ **自动续期**: Certbot 定时任务自动续期证书
+- 🎯 **原生实现**: 不依赖 CDN，直接部署
+
 ### 快速部署
 
 ```bash
-# 推荐：先安装 OpenResty（可选，如果未安装会自动使用官方源安装）
-./install.sh --openresty
-
-# 方式 1: 通过主安装脚本
+# 方式 1: 通过主安装脚本（推荐）
 ./install.sh --trojan-go
 
 # 方式 2: 直接运行部署脚本
@@ -172,21 +177,78 @@ bash scripts/debian12/trojan-go.sh install
 
 ### 配置要求
 
-安装过程中需要提供：
-- **域名**: 已解析到服务器的域名
-- **SSL 证书**: 完整的证书内容（.crt）
-- **SSL 私钥**: 完整的私钥内容（.key）
+安装过程中只需要提供：
+- **域名**: 已解析到服务器的域名（必须）
+- **邮箱**: 用于 SSL 证书通知（可选）
 
-脚本会自动生成：
-- 32位随机 Trojan-Go 密码
-- WebSocket 路径（/ws + 8位随机字符）
+脚本会自动：
+- ✅ 申请 Let's Encrypt SSL 证书
+- ✅ 配置 Nginx 反向代理
+- ✅ 安装 Trojan-Go 服务
+- ✅ 生成 32 位随机密码
+- ✅ 设置 WebSocket 路径
+- ✅ 配置证书自动续期
+
+### 目录结构
+
+```
+scripts/debian12/trojan-go/
+├── main.sh                 # 主入口脚本
+├── lib/
+│   ├── env.sh             # 环境检查和初始化
+│   ├── nginx.sh           # Nginx 安装配置
+│   ├── trojan.sh          # Trojan-Go 安装
+│   ├── ssl.sh             # SSL 证书管理（certbot）
+│   └── service.sh         # 服务管理
+└── templates/
+    └── nginx-vhost.conf   # Nginx 虚拟主机模板
+```
 
 ### 安装信息
 
 部署完成后，配置信息保存在：
-- `/usr/local/trojan-go/install_info.txt` - 连接信息
+- `/usr/local/trojan-go/install_info.txt` - 完整安装信息
 - `/usr/local/trojan-go/config.json` - Trojan-Go 配置
-- `/usr/local/openresty/nginx/conf/vhost/{域名}.conf` - Nginx 虚拟主机配置
+- `/usr/local/openresty/nginx/conf/vhost/{域名}.conf` - Nginx 配置
+- `/etc/letsencrypt/live/{域名}/` - SSL 证书目录
+
+### 常用命令
+
+```bash
+# 查看状态
+bash scripts/debian12/trojan-go.sh status
+
+# 重启服务
+bash scripts/debian12/trojan-go.sh restart
+
+# 重载配置
+bash scripts/debian12/trojan-go.sh reload
+
+# 健康检查
+bash scripts/debian12/trojan-go.sh health
+
+# 测试证书续期
+bash scripts/debian12/trojan-go.sh test-renew
+
+# 手动续期证书
+bash scripts/debian12/trojan-go.sh renew
+
+# 卸载
+bash scripts/debian12/trojan-go.sh uninstall
+```
+
+### SSL 证书管理
+
+证书由 certbot 自动管理：
+- **自动续期**: systemd timer 每天检查两次
+- **续期钩子**: 证书更新后自动重载服务
+- **有效期**: Let's Encrypt 证书有效期 90 天
+- **提前续期**: 剩余 30 天时自动续期
+
+查看续期计划：
+```bash
+systemctl status certbot.timer
+```
 
 ### 服务管理
 
@@ -194,6 +256,7 @@ bash scripts/debian12/trojan-go.sh install
 # 查看状态
 systemctl status trojan-go
 systemctl status nginx
+systemctl status certbot.timer
 
 # 重启服务
 systemctl restart trojan-go
@@ -201,33 +264,38 @@ systemctl restart nginx
 
 # 查看日志
 tail -f /var/log/trojan-go/trojan-go.log
+tail -f /var/log/nginx/{域名}.access.log
 
-# 重新配置
-bash scripts/debian12/trojan-go.sh reload
-
-# 卸载
-bash scripts/debian12/trojan-go.sh uninstall
+# 使用脚本管理
+bash scripts/debian12/trojan-go.sh status    # 状态
+bash scripts/debian12/trojan-go.sh restart   # 重启
+bash scripts/debian12/trojan-go.sh health    # 健康检查
 ```
 
 ### 故障排查
 
-#### Nginx 端口占用问题
-如果遇到 `bind() to 0.0.0.0:80 failed (98: Address already in use)` 错误：
-
+#### 1. 域名解析问题
 ```bash
-# 方式1: 使用修复脚本（推荐）
-bash fix-nginx-port.sh
+# 检查域名解析
+dig +short yourdomain.com A
 
-# 方式2: 手动修复
-# 查看端口占用
+# 检查服务器 IP
+curl -4 ifconfig.me
+```
+
+#### 2. SSL 证书申请失败
+```bash
+# 检查端口 80 是否被占用
 lsof -i :80
 
-# 停止所有 nginx 进程
-systemctl stop nginx
-pkill -9 nginx
+# 查看 certbot 日志
+journalctl -u certbot -n 50
+```
 
-# 重新启动
-systemctl start nginx
+#### 3. Nginx 端口占用
+```bash
+# 使用修复脚本
+bash fix-nginx-port.sh
 ```
 
 详细文档请查看: `doc/trojan-go部署指南.md`
