@@ -34,6 +34,7 @@
 cd /root
 git clone https://github.com/ACCS2024/deploy.git deploy
 cd deploy
+chmod +x install.sh
 ```
 
 ### 2. 推荐先安装 OpenResty (可选)
