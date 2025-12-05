@@ -27,6 +27,12 @@ request_ssl_cert() {
     local domain="$1"
     local email="${2:-admin@${domain}}"
     
+    # 参数验证
+    if [[ -z "$domain" ]]; then
+        log_error "域名参数不能为空"
+        return 1
+    fi
+    
     log_step "申请 SSL 证书: ${domain}"
     
     # 停止 nginx 以释放 80 端口
@@ -98,6 +104,12 @@ show_cert_info() {
 # 设置自动续期
 #===============================================================================
 setup_auto_renew() {
+    local domain="${1:-}"
+    
+    if [[ -n "$domain" ]] && ! check_cert_exists "$domain"; then
+        log_warn "证书不存在，跳过续期设置: $domain"
+        return 1
+    fi
     log_step "配置证书自动续期"
     
     # certbot 会自动创建 systemd timer，检查是否已启用

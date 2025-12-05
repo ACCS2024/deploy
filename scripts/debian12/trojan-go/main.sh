@@ -15,7 +15,7 @@ source "${SCRIPT_DIR}/../../config/versions.conf"
 
 # 加载模块
 source "${SCRIPT_DIR}/lib/env.sh"
-source "${SCRIPT_DIR}/lib/ssl.sh"
+source "${SCRIPT_DIR}/../ssl.sh"  # SSL 模块提升到上层，供多个组件复用
 source "${SCRIPT_DIR}/lib/nginx.sh"
 source "${SCRIPT_DIR}/lib/trojan.sh"
 source "${SCRIPT_DIR}/lib/service.sh"
@@ -176,13 +176,22 @@ install() {
     install_nginx
     
     # 8. 创建 Nginx 虚拟主机
-    create_nginx_vhost "$DOMAIN" "$WS_PATH"
+    create_nginx_vhost "$DOMAIN" "$WS_PATH" || {
+        log_error "Nginx 虚拟主机创建失败"
+        exit 1
+    }
     
     # 9. 安装 Trojan-Go
-    install_trojan
+    install_trojan || {
+        log_error "Trojan-Go 安装失败"
+        exit 1
+    }
     
     # 10. 创建 Trojan-Go 配置
-    create_trojan_config "$DOMAIN" "$TROJAN_PASSWORD" "$WS_PATH"
+    create_trojan_config "$DOMAIN" "$TROJAN_PASSWORD" "$WS_PATH" || {
+        log_error "Trojan-Go 配置创建失败"
+        exit 1
+    }
     
     # 11. 创建服务
     create_trojan_service

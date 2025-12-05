@@ -18,7 +18,22 @@ install_trojan() {
     cd /tmp
     rm -rf trojan-go-linux-amd64.zip trojan-go-tmp 2>/dev/null
     
-    wget -q "https://github.com/p4gefau1t/trojan-go/releases/download/${TROJAN_VERSION}/trojan-go-linux-amd64.zip"
+    # 下载重试机制
+    local max_retry=3
+    local retry=0
+    while [[ $retry -lt $max_retry ]]; do
+        if wget -q --timeout=30 "https://github.com/p4gefau1t/trojan-go/releases/download/${TROJAN_VERSION}/trojan-go-linux-amd64.zip"; then
+            break
+        fi
+        retry=$((retry + 1))
+        log_warn "下载失败，重试 $retry/$max_retry"
+        sleep 2
+    done
+    
+    if [[ ! -f trojan-go-linux-amd64.zip ]]; then
+        log_error "Trojan-Go 下载失败"
+        return 1
+    fi
     
     log_info "解压并安装"
     unzip -q trojan-go-linux-amd64.zip -d trojan-go-tmp
@@ -45,6 +60,19 @@ create_trojan_config() {
     local domain="$1"
     local password="$2"
     local ws_path="$3"
+    
+    # 参数验证
+    if [[ -z "$domain" || -z "$password" || -z "$ws_path" ]]; then
+        log_error "配置参数不完整: domain=$domain, password=$password, ws_path=$ws_path"
+        return 1
+    fi
+    
+    # 检查证书文件是否存在
+    if [[ ! -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ]] || \
+       [[ ! -f "/etc/letsencrypt/live/${domain}/privkey.pem" ]]; then
+        log_error "SSL 证书文件不存在，请先申请证书"
+        return 1
+    fi
     
     log_step "创建 Trojan-Go 配置"
     

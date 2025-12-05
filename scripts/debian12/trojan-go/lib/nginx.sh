@@ -38,6 +38,12 @@ install_nginx() {
     # 创建 systemd 服务
     create_nginx_service
     
+    # 创建 vhost 目录
+    mkdir -p /etc/openresty/vhost
+    
+    # 配置 nginx.conf 引入 vhost
+    configure_nginx_vhost_include
+    
     log_info "✓ OpenResty 安装完成"
 }
 
@@ -78,11 +84,69 @@ EOF
 }
 
 #===============================================================================
+# 配置 Nginx 引入 vhost 目录
+#===============================================================================
+configure_nginx_vhost_include() {
+    local nginx_conf="/usr/local/openresty/nginx/conf/nginx.conf"
+    
+    if [[ ! -f "$nginx_conf" ]]; then
+        log_error "Nginx 配置文件不存在: $nginx_conf"
+        return 1
+    fi
+    
+    # 检查是否已经配置了 vhost 引入
+    if grep -q "include /etc/openresty/vhost/\*.conf;" "$nginx_conf"; then
+        log_info "Nginx 已配置 vhost 引入"
+        return 0
+    fi
+    
+    log_info "配置 Nginx 引入 vhost 目录"
+    
+    # 备份配置文件
+    local backup_file="${nginx_conf}.bak.$(date +%Y%m%d_%H%M%S)"
+    cp "$nginx_conf" "$backup_file"
+    
+    # 在 http 块的末尾添加 include 指令
+    # 使用更安全的方式：在最后一个 } 前插入
+    if sed -i '/^http {/,/^}/ {
+        /^}/i\    # 引入虚拟主机配置\n    include /etc/openresty/vhost/*.conf;
+    }' "$nginx_conf"; then
+        log_info "✓ Nginx vhost 引入配置完成"
+    else
+        log_error "配置修改失败，恢复备份"
+        cp "$backup_file" "$nginx_conf" 2>/dev/null || true
+        return 1
+    fi
+    
+    # 测试配置
+    if ! nginx -t 2>/dev/null; then
+        log_error "Nginx 配置测试失败，恢复备份"
+        cp "$backup_file" "$nginx_conf" 2>/dev/null || true
+        return 1
+    fi
+}
+
+#===============================================================================
 # 创建 Nginx 虚拟主机配置
 #===============================================================================
 create_nginx_vhost() {
     local domain="$1"
     local ws_path="$2"
+    
+    # 参数验证
+    if [[ -z "$domain" ]]; then
+        log_error "域名参数不能为空"
+        return 1
+    fi
+    
+    if [[ -z "$ws_path" ]]; then
+        log_error "WebSocket 路径参数不能为空"
+        return 1
+    fi
+    
+    # 确保目录存在
+    mkdir -p "${NGINX_VHOST_DIR}"
+    
     local vhost_file="${NGINX_VHOST_DIR}/${domain}.conf"
     
     log_step "创建 Nginx 虚拟主机: ${domain}"

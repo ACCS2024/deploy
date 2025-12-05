@@ -8,7 +8,7 @@ export TROJAN_VERSION="v0.10.6"
 export TROJAN_INSTALL_DIR="/usr/local/trojan-go"
 export TROJAN_CONFIG_FILE="${TROJAN_INSTALL_DIR}/config.json"
 export TROJAN_LOG_DIR="/var/log/trojan-go"
-export NGINX_VHOST_DIR="/usr/local/openresty/nginx/conf/vhost"
+export NGINX_VHOST_DIR="/etc/openresty/vhost"
 export SSL_DIR="/etc/letsencrypt/live"
 export WEBROOT="/var/www"
 
@@ -74,10 +74,15 @@ validate_domain() {
 check_domain_dns() {
     local domain="$1"
     
+    if [[ -z "$domain" ]]; then
+        log_error "域名参数不能为空"
+        return 1
+    fi
+    
     log_info "检查域名 DNS 解析..."
     
     # 获取本机公网 IP
-    local server_ip=$(curl -s -4 ifconfig.me || curl -s -4 icanhazip.com || curl -s -4 ipinfo.io/ip)
+    local server_ip=$(curl -s -4 --max-time 10 ifconfig.me || curl -s -4 --max-time 10 icanhazip.com || curl -s -4 --max-time 10 ipinfo.io/ip)
     
     if [[ -z "$server_ip" ]]; then
         log_warn "无法获取服务器公网 IP，跳过 DNS 检查"
