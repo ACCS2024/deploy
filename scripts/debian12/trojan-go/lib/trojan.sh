@@ -67,15 +67,9 @@ create_trojan_config() {
         return 1
     fi
     
-    # 检查证书文件是否存在
-    if [[ ! -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ]] || \
-       [[ ! -f "/etc/letsencrypt/live/${domain}/privkey.pem" ]]; then
-        log_error "SSL 证书文件不存在，请先申请证书"
-        return 1
-    fi
+    log_step "创建 Trojan-Go 配置 (WebSocket 后端模式)"
     
-    log_step "创建 Trojan-Go 配置"
-    
+    # 作为 WebSocket 后端，监听本地端口，由 Nginx 处理 TLS
     cat > "${TROJAN_CONFIG_FILE}" << EOF
 {
     "run_type": "server",
@@ -88,26 +82,11 @@ create_trojan_config() {
     ],
     "log_level": 1,
     "log_file": "${TROJAN_LOG_DIR}/trojan-go.log",
-    "ssl": {
-        "cert": "/etc/letsencrypt/live/${domain}/fullchain.pem",
-        "key": "/etc/letsencrypt/live/${domain}/privkey.pem",
-        "sni": "${domain}",
-        "alpn": [
-            "http/1.1"
-        ],
-        "session_ticket": true,
-        "reuse_session": true,
-        "plain_http_response": "",
-        "fallback_addr": "127.0.0.1",
-        "fallback_port": 80,
-        "fingerprint": "firefox"
-    },
     "tcp": {
         "prefer_ipv4": true,
         "no_delay": true,
         "keep_alive": true,
-        "fast_open": true,
-        "fast_open_qlen": 20
+        "fast_open": false
     },
     "websocket": {
         "enabled": true,
