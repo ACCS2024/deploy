@@ -7,14 +7,21 @@
 ```bash
 # 下载到服务器
 cd /root
-git clone <repo> deploy
+git clone https://github.com/ACCS2024/deploy.git deploy
 cd deploy
 
 # 赋予执行权限
 chmod +x install.sh
+chmod +x scripts/debian12/*.sh
 
 # 安装指定组件
 ./install.sh --mysql --redis
+
+# 安装 Trojan-Go + Nginx (交互式配置)
+./install.sh --trojan-go
+
+# 或直接运行 Trojan-Go 脚本
+bash scripts/debian12/trojan-go.sh install
 
 # 安装全部组件（编译模式）
 ./install.sh --all --mode compile
@@ -55,10 +62,64 @@ ps aux --no-headers -o "rss,cmd" -C php-fpm | awk '{ sum+=$1 } END { printf ("�
 - `--mode fast` (默认): 使用预编译包，速度快
 - `--mode compile`: 从源码编译，可定制
 
+## Trojan-Go 代理部署
+
+### 快速部署
+
+```bash
+# 方式 1: 通过主安装脚本
+./install.sh --trojan-go
+
+# 方式 2: 直接运行部署脚本
+bash scripts/debian12/trojan-go.sh install
+```
+
+### 配置要求
+
+安装过程中需要提供：
+- **域名**: 已解析到服务器的域名
+- **SSL 证书**: 完整的证书内容（.crt）
+- **SSL 私钥**: 完整的私钥内容（.key）
+
+脚本会自动生成：
+- 32位随机 Trojan-Go 密码
+- WebSocket 路径（/ws + 8位随机字符）
+
+### 安装信息
+
+部署完成后，配置信息保存在：
+- `/usr/local/trojan-go/install_info.txt` - 连接信息
+- `/usr/local/trojan-go/config.json` - Trojan-Go 配置
+- `/usr/local/openresty/nginx/conf/vhost/{域名}.conf` - Nginx 虚拟主机配置
+
+### 服务管理
+
+```bash
+# 查看状态
+systemctl status trojan-go
+systemctl status nginx
+
+# 重启服务
+systemctl restart trojan-go
+systemctl restart nginx
+
+# 查看日志
+tail -f /var/log/trojan-go/trojan-go.log
+
+# 重新配置
+bash scripts/debian12/trojan-go.sh reload
+
+# 卸载
+bash scripts/debian12/trojan-go.sh uninstall
+```
+
+详细文档请查看: `doc/trojan-go部署指南.md`
+
 ## 日志
 
 - 主日志: `/var/log/deploy/deploy-*.log`
 - 组件日志: `/var/log/deploy/components/*.log`
+- Trojan-Go 日志: `/var/log/trojan-go/trojan-go.log`
 
 ## 密码
 

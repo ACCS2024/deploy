@@ -48,6 +48,7 @@ show_help() {
   --redis        Redis 安装
   --fail2ban     Fail2ban 安装
   --firewall     防火墙配置
+  --trojan-go    Trojan-Go + Nginx 代理部署（交互式）
   --all          安装所有组件
 
 其他选项:
@@ -57,6 +58,7 @@ show_help() {
 
 示例:
   $0 --mysql --redis
+  $0 --trojan-go
   $0 --all --mode compile
   $0 --openresty --php --mode fast
 EOF
@@ -151,6 +153,7 @@ parse_args() {
             --redis)     COMPONENTS+=("redis"); shift ;;
             --fail2ban)  COMPONENTS+=("fail2ban"); shift ;;
             --firewall)  COMPONENTS+=("firewall"); shift ;;
+            --trojan-go) COMPONENTS+=("trojan-go"); shift ;;
             --all)
                 COMPONENTS=("system" "network" "packages" "php" "openresty" "mysql" "redis" "fail2ban" "firewall")
                 shift
