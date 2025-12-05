@@ -346,17 +346,34 @@ interactive_config() {
     echo ""
     
     # 获取域名
-    read -p "请输入域名 (例如: example.com): " DOMAIN
-    while [[ -z "${DOMAIN}" ]]; do
-        echo -e "${RED}域名不能为空${NC}"
-        read -p "请输入域名: " DOMAIN
+    while true; do
+        read -p "请输入域名 (例如: example.com): " DOMAIN
+        
+        # 移除可能的 http:// 或 https:// 前缀
+        DOMAIN=$(echo "$DOMAIN" | sed -e 's|^https\?://||' -e 's|/$||')
+        
+        # 验证域名格式
+        if [[ -z "${DOMAIN}" ]]; then
+            echo -e "${RED}域名不能为空${NC}"
+            continue
+        fi
+        
+        # 简单的域名格式验证
+        if [[ ! "${DOMAIN}" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$ ]]; then
+            echo -e "${RED}域名格式不正确，请输入有效的域名（不包含 http:// 等前缀）${NC}"
+            echo "示例: example.com 或 sub.example.com"
+            continue
+        fi
+        
+        echo -e "${GREEN}✓ 域名格式正确: ${DOMAIN}${NC}"
+        break
     done
     
     # 生成随机密码
     TROJAN_PASSWORD=$(generate_password 32)
     
     echo ""
-    echo "已生成 Trojan-Go 密码: ${GREEN}${TROJAN_PASSWORD}${NC}"
+    echo -e "已生成 Trojan-Go 密码: ${GREEN}${TROJAN_PASSWORD}${NC}"
     echo "请妥善保存此密码！"
     echo ""
     

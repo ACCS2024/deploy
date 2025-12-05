@@ -39,15 +39,7 @@ update_code() {
     
     # 检查是否有未提交的修改
     if ! git diff --quiet || ! git diff --staged --quiet; then
-        log_warn "检测到本地有未提交的修改"
-        read -p "是否要强制更新（会丢失本地修改）? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            log_info "更新已取消"
-            exit 0
-        fi
-        
-        log_warn "强制重置到远程版本..."
+        log_warn "检测到本地有未提交的修改，将强制重置到远程版本"
         git reset --hard HEAD
         git clean -fd
     fi
