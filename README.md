@@ -14,10 +14,17 @@ cd deploy
 chmod +x install.sh
 chmod +x scripts/debian12/*.sh
 
-# 更新仓库（下次使用）
+# 更新脚本（如果有bug修复或新功能）
 git pull origin master
+
+# 如果有冲突，强制更新（会覆盖本地修改）
+git reset --hard origin/master
+git pull origin master
+
+# 重新赋予执行权限（更新后可能需要）
 chmod +x install.sh
 chmod +x scripts/debian12/*.sh
+```
 
 # 安装指定组件
 ./install.sh --mysql --redis
@@ -36,6 +43,79 @@ bash scripts/debian12/trojan-go.sh install
 ```
 
 > **注意**: 所有组件脚本已统一参数处理格式，完全兼容 `--mode` 参数。
+
+## 更新脚本
+
+如果有bug修复或新功能发布，请按以下步骤更新：
+
+### 一键更新（推荐）
+```bash
+cd /root/deploy
+./update.sh
+```
+
+### 手动更新
+```bash
+cd /root/deploy
+git pull origin master
+
+# 重新赋予执行权限
+chmod +x install.sh
+chmod +x scripts/debian12/*.sh
+```
+
+### 强制更新（覆盖本地修改）
+```bash
+cd /root/deploy
+git reset --hard origin/master
+git pull origin master
+
+# 重新赋予执行权限
+chmod +x install.sh
+chmod +x scripts/debian12/*.sh
+```
+
+### 更新前备份重要配置
+```bash
+cd /root/deploy
+
+# 备份 Trojan-Go 配置（如果已安装）
+cp /usr/local/trojan-go/install_info.txt ./trojan-go-backup.txt 2>/dev/null || true
+
+# 备份 MySQL 密码
+cp /home/video/uboy.cbo ./mysql-password-backup.txt 2>/dev/null || true
+
+# 然后更新
+git pull origin master
+```
+
+### 处理更新冲突
+如果更新时出现冲突：
+```bash
+cd /root/deploy
+
+# 查看冲突文件
+git status
+
+# 放弃本地修改，接受远程版本
+git checkout -- <冲突的文件名>
+
+# 或者强制重置
+git reset --hard origin/master
+git pull origin master
+```
+
+### 查看更新历史
+```bash
+cd /root/deploy
+git log --oneline -10  # 查看最近10次提交
+```
+
+### 检查当前版本
+```bash
+cd /root/deploy
+git branch -v  # 查看当前分支和最新提交
+```
 
 ## PHP-FPM 性能优化
 
@@ -140,6 +220,7 @@ MySQL root 密码保存在: `/home/video/uboy.cbo`
 ```
 deploy/
 ├── install.sh           # 入口脚本
+├── update.sh            # 更新脚本
 ├── lib/common.sh        # 公共函数
 ├── config/              # 配置文件
 │   └── versions.conf    # 版本和路径配置
