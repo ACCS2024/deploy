@@ -16,6 +16,7 @@ source "${SCRIPT_DIR}/../../config/versions.conf"
 # 加载模块
 source "${SCRIPT_DIR}/lib/env.sh"
 source "${SCRIPT_DIR}/../ssl.sh"  # SSL 模块提升到上层，供多个组件复用
+source "${SCRIPT_DIR}/../firewall_simple.sh"  # 防火墙模块
 source "${SCRIPT_DIR}/lib/nginx.sh"
 source "${SCRIPT_DIR}/lib/trojan.sh"
 source "${SCRIPT_DIR}/lib/service.sh"
@@ -160,57 +161,62 @@ install() {
         log_warn "DNS 检查未通过，但可以继续安装"
     }
     
-    # 4. 安装 certbot
+    # 4. 配置防火墙
+    setup_firewall
+    setup_basic_firewall_rules
+    open_web_ports
+    
+    # 5. 安装 certbot
     install_certbot
     
-    # 5. 申请 SSL 证书
+    # 6. 申请 SSL 证书
     request_ssl_cert "$DOMAIN" "$EMAIL" || {
         log_error "SSL 证书申请失败，无法继续"
         exit 1
     }
     
-    # 6. 设置自动续期
+    # 7. 设置自动续期
     setup_auto_renew
     
-    # 7. 安装 Nginx
+    # 8. 安装 Nginx
     install_nginx
     
-    # 8. 创建 Nginx 虚拟主机
+    # 9. 创建 Nginx 虚拟主机
     create_nginx_vhost "$DOMAIN" "$WS_PATH" || {
         log_error "Nginx 虚拟主机创建失败"
         exit 1
     }
     
-    # 9. 安装 Trojan-Go
+    # 10. 安装 Trojan-Go
     install_trojan || {
         log_error "Trojan-Go 安装失败"
         exit 1
     }
     
-    # 10. 创建 Trojan-Go 配置
+    # 11. 创建 Trojan-Go 配置
     create_trojan_config "$DOMAIN" "$TROJAN_PASSWORD" "$WS_PATH" || {
         log_error "Trojan-Go 配置创建失败"
         exit 1
     }
     
-    # 11. 创建服务
+    # 12. 创建服务
     create_trojan_service
     
-    # 12. 启动服务
+    # 13. 启动服务
     start_services || {
         log_error "服务启动失败"
         show_status
         exit 1
     }
     
-    # 13. 保存安装信息
+    # 14. 保存安装信息
     save_install_info
     
-    # 14. 健康检查
+    # 15. 健康检查
     sleep 3
     health_check
     
-    # 15. 显示完成信息
+    # 16. 显示完成信息
     show_complete_info
     
     log_info "🎉 部署完成！"

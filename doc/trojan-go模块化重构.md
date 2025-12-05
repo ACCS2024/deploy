@@ -12,8 +12,9 @@
 
 ```
 scripts/debian12/
-├── ssl.sh                          # ⭐ SSL 模块（提升到上层，供多组件复用）
-├── trojan-go.sh                    # 入口脚本（兼容旧版）
+├── ssl.sh ⭐                          # SSL 模块（提升到上层，供多组件复用）
+├── firewall_simple.sh ⭐              # 防火墙模块（全局通用）
+├── trojan-go.sh                      # 入口脚本（兼容旧版）
 └── trojan-go/                      # 模块化目录
     ├── main.sh                     # 主流程控制
     ├── lib/                        # 功能模块
@@ -38,6 +39,15 @@ scripts/debian12/
 - **优势**: 方便后续添加多个虚拟主机，无需修改主配置文件
 
 ## 🚀 核心功能
+
+### 0. 防火墙模块 (firewall_simple.sh) ⭐ 全局模块
+- ✅ 安装 iptables 和 iptables-persistent
+- ✅ 自动禁用 ufw（如果存在）
+- ✅ 开放端口（带参数验证）
+- ✅ 规则持久化（自动保存）
+- ✅ 基础规则配置（SSH、回环、已建立连接）
+- ✅ Web 端口开放（80、443）
+- ✅ 查看当前规则
 
 ### 1. 环境模块 (env.sh)
 - ✅ Root 权限检查
@@ -107,7 +117,14 @@ scripts/debian12/
    ├── 解析域名 IP
    └── 对比验证
 
-4. SSL 证书
+4. 防火墙配置 ⭐
+   ├── 安装 iptables
+   ├── 禁用 ufw
+   ├── 配置基础规则（SSH、回环）
+   ├── 开放 Web 端口（80、443）
+   └── 持久化规则
+
+5. SSL 证书
    ├── 安装 certbot
    ├── 使用 standalone 模式申请证书
    ├── 配置 systemd timer 自动续期
@@ -147,6 +164,7 @@ bash scripts/debian12/trojan-go.sh install
 # 2. 邮箱: admin@example.com（可选）
 # 
 # 其他全部自动完成：
+# - 防火墙配置（开放 80、443 端口）
 # - SSL 证书申请
 # - 密码生成
 # - WebSocket 路径生成
