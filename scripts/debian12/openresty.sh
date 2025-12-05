@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../../lib/common.sh"
 source "${SCRIPT_DIR}/../../config/versions.conf"
 
-MODE="${2:-fast}"
+MODE="fast"
 CONF_SOURCE="${SCRIPT_DIR}/../../conf"
 NGINX_CONF_DIR="${OPENRESTY_PREFIX}/nginx/conf"
 BACKUP_BASE="${OPENRESTY_PREFIX}/nginx/backup"
@@ -223,10 +223,36 @@ check() {
 }
 
 #===============================================================================
-# 主入口
+# 主入口 - 兼容 install.sh 调用格式
 #===============================================================================
-case "${1:-install}" in
-    --check) check ;;
-    --mode)  shift; MODE="$1"; install && check ;;
-    *)       install && check ;;
+# 解析参数
+ACTION="install"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --mode)
+            MODE="$2"
+            shift 2
+            ;;
+        --check)
+            ACTION="check"
+            shift
+            ;;
+        install|check)
+            ACTION="$1"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+# 执行操作
+case "${ACTION}" in
+    check)
+        check
+        ;;
+    install|*)
+        install && check
+        ;;
 esac

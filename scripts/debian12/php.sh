@@ -116,9 +116,36 @@ check() {
 }
 
 #===============================================================================
-# 主入口
+# 主入口 - 兼容 install.sh 调用格式
 #===============================================================================
-case "${1:-install}" in
-    --check) check ;;
-    *)       install && check ;;
+# 解析参数
+ACTION="install"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --mode)
+            # 兼容主安装脚本传递的 --mode 参数
+            shift 2
+            ;;
+        --check)
+            ACTION="check"
+            shift
+            ;;
+        install|check)
+            ACTION="$1"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+# 执行操作
+case "${ACTION}" in
+    check)
+        check
+        ;;
+    install|*)
+        install && check
+        ;;
 esac

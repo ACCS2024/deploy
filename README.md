@@ -14,6 +14,11 @@ cd deploy
 chmod +x install.sh
 chmod +x scripts/debian12/*.sh
 
+# 更新仓库（下次使用）
+git pull origin master
+chmod +x install.sh
+chmod +x scripts/debian12/*.sh
+
 # 安装指定组件
 ./install.sh --mysql --redis
 
@@ -26,9 +31,11 @@ bash scripts/debian12/trojan-go.sh install
 # 安装全部组件（编译模式）
 ./install.sh --all --mode compile
 
-# 安装全部组件（快速模式）
+# 安装全部组件（快速模式，默认）
 ./install.sh --all --mode fast
 ```
+
+> **注意**: 所有组件脚本已统一参数处理格式，完全兼容 `--mode` 参数。
 
 ## PHP-FPM 性能优化
 

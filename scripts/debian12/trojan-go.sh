@@ -540,9 +540,28 @@ reload() {
 }
 
 #===============================================================================
-# 命令行参数处理
+# 主入口 - 兼容 install.sh 调用格式
 #===============================================================================
-case "${1:-install}" in
+# 解析参数
+ACTION="install"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --mode)
+            # 兼容主安装脚本传递的 --mode 参数，但 trojan-go 不使用此参数
+            shift 2
+            ;;
+        install|uninstall|reload|status)
+            ACTION="$1"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+# 执行操作
+case "${ACTION}" in
     install)
         install
         ;;
@@ -556,7 +575,7 @@ case "${1:-install}" in
         show_status
         ;;
     *)
-        echo "用法: $0 {install|uninstall|reload|status}"
+        echo "用法: $0 [--mode fast|compile] {install|uninstall|reload|status}"
         exit 1
         ;;
 esac
