@@ -429,15 +429,42 @@ EOF
 enable_services() {
     log_step "启用服务并设置开机自启"
     
+    # 清理可能存在的孤立 nginx 进程
+    log_info "检查并清理旧的 nginx 进程..."
+    pkill -9 nginx 2>/dev/null || true
+    sleep 2
+    
     # 启用 Nginx
     systemctl enable nginx
-    systemctl restart nginx
-    log_info "Nginx 已启动并设置为开机自启"
+    systemctl start nginx
+    
+    # 检查 Nginx 启动状态
+    if systemctl is-active --quiet nginx; then
+        log_info "✓ Nginx 已启动并设置为开机自启"
+    else
+        log_error "✗ Nginx 启动失败，尝试查看错误信息..."
+        systemctl status nginx --no-pager -l || true
+        
+        # 检查端口占用
+        log_info "检查端口 80 占用情况:"
+        lsof -i :80 || netstat -tlnp | grep :80 || true
+        
+        log_error "请手动检查 Nginx 配置或端口占用问题"
+        return 1
+    fi
     
     # 启用 Trojan-Go
     systemctl enable trojan-go
-    systemctl restart trojan-go
-    log_info "Trojan-Go 已启动并设置为开机自启"
+    systemctl start trojan-go
+    
+    # 检查 Trojan-Go 启动状态
+    if systemctl is-active --quiet trojan-go; then
+        log_info "✓ Trojan-Go 已启动并设置为开机自启"
+    else
+        log_error "✗ Trojan-Go 启动失败"
+        systemctl status trojan-go --no-pager -l || true
+        return 1
+    fi
 }
 
 #===============================================================================

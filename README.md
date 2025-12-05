@@ -209,6 +209,27 @@ bash scripts/debian12/trojan-go.sh reload
 bash scripts/debian12/trojan-go.sh uninstall
 ```
 
+### 故障排查
+
+#### Nginx 端口占用问题
+如果遇到 `bind() to 0.0.0.0:80 failed (98: Address already in use)` 错误：
+
+```bash
+# 方式1: 使用修复脚本（推荐）
+bash fix-nginx-port.sh
+
+# 方式2: 手动修复
+# 查看端口占用
+lsof -i :80
+
+# 停止所有 nginx 进程
+systemctl stop nginx
+pkill -9 nginx
+
+# 重新启动
+systemctl start nginx
+```
+
 详细文档请查看: `doc/trojan-go部署指南.md`
 
 ## 日志
